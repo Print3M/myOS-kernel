@@ -3,15 +3,11 @@
 #include "../stdlib.h"
 #include "mmap.h"
 
-const frame_state FREE_FRAME = 0x00;
-const frame_state LOCKED_FRAME = 0x01;
-const frame_state RESERVED_FRAME = 0x02;
-
 PhysicalMemory physical_memory = {.initialized = false};
 
 void __get_largest_free_mem_seg(MemoryData *memory, size_t *size, void **mem_seg) {
-	// IN memory
-	// OUT size - size of largest free memory segment
+	// IN  memory
+	// OUT size    - size of largest free memory segment
 	// OUT mem_seg - address to largest free mem seg
 	*size = 0;
 
@@ -47,10 +43,10 @@ frame_state PhysicalMemory__get_frame_state(size_t index) {
 	return physical_memory.array[index].state;
 }
 
-int64_t PhysicalMemory__get_frame_index_by_ptr(void *mem_ptr) {
+size_t PhysicalMemory__get_frame_index_by_ptr(void *mem_ptr) {
 	/*
-		Return index of page frame raleted with address passed in :mem_ptr.
-		If doesn't found, return -1.
+		Return index of page frame ralated to address passed in :mem_ptr.
+		If it's not found, return -1.
 	*/
 	size_t ptr = (size_t) mem_ptr;
 
@@ -80,16 +76,15 @@ void PhysicalMemory__init(MemoryData *memory, void *page_frames_array_buffer, vo
 
 	// Initialize - all frames set to free
 	physical_memory.array = (PageFrame *) page_frames_array_buffer;
-	physical_memory.free_memory = get_used_memory_size(memory);
-	physical_memory.frames = physical_memory.free_memory / FRAME_SZ;
+	physical_memory.frames = get_number_of_page_frames(memory);
 	physical_memory.free_frames = physical_memory.frames;
 	physical_memory.used_frames = 0;
-	physical_memory.used_memory = 0;
 	physical_memory.reserved_frames = 0;
-	physical_memory.reserved_memory = 0;
 
 	// Set all frames in array to free
 	for (uint64_t i = 0; i < physical_memory.frames; i++) {
+		// TODO: What about memory mapped regions?
+		//		 They are not locked further.
 		PhysicalMemory__set_frame_state(i, FREE_FRAME);
 	}
 
@@ -140,9 +135,7 @@ void PhysicalMemory__lock_frame(size_t index) {
 
 	if (state == FREE_FRAME) {
 		physical_memory.free_frames -= 1;
-		physical_memory.free_memory -= FRAME_SZ;
 		physical_memory.used_frames += 1;
-		physical_memory.used_memory += FRAME_SZ;
 		PhysicalMemory__set_frame_state(index, LOCKED_FRAME);
 	}
 }
@@ -152,9 +145,7 @@ void PhysicalMemory__free_frame(size_t index) {
 
 	if (state == LOCKED_FRAME) {
 		physical_memory.free_frames += 1;
-		physical_memory.free_memory += FRAME_SZ;
 		physical_memory.used_frames -= 1;
-		physical_memory.used_memory -= FRAME_SZ;
 		PhysicalMemory__set_frame_state(index, FREE_FRAME);
 	}
 }
@@ -164,9 +155,7 @@ void PhysicalMemory__reserve_frame(size_t index) {
 
 	if (state == FREE_FRAME) {
 		physical_memory.free_frames -= 1;
-		physical_memory.free_memory -= FRAME_SZ;
 		physical_memory.reserved_frames += 1;
-		physical_memory.reserved_memory += FRAME_SZ;
 		PhysicalMemory__set_frame_state(index, RESERVED_FRAME);
 	}
 }
@@ -176,9 +165,26 @@ void PhysicalMemory__unreserve_frame(size_t index) {
 
 	if (state == RESERVED_FRAME) {
 		physical_memory.free_frames += 1;
-		physical_memory.free_memory += FRAME_SZ;
 		physical_memory.reserved_frames -= 1;
-		physical_memory.reserved_memory -= FRAME_SZ;
 		PhysicalMemory__set_frame_state(index, FREE_FRAME);
 	}
+}
+
+void *pmem_request_frame(void) {
+	/*
+		Return address of allocated page frame.
+		If return NULL, there is no free page frame to allocate.
+	*/
+	if (physical_memory.free_frames == 0) {
+		return NULL;
+	}
+
+	for (size_t i = 0; i < physical_memory.frames; i++) {
+		if (physical_memory.array[i].state == FREE_FRAME) {
+			PhysicalMemory__lock_frame(i);
+			return physical_memory.array[i].frame_addr;
+		}
+	}
+
+	return NULL;
 }

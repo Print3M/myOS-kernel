@@ -40,4 +40,4 @@ typedef enum {
 EfiMemoryDescriptor *
 get_memory_descriptor(EfiMemoryDescriptor *memory_map, uint64_t n, size_t descriptor_sz);
 
-uint64_t get_used_memory_size(MemoryData *memory);
+uint64_t get_number_of_page_frames(MemoryData *memory);

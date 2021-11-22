@@ -2,55 +2,55 @@
 	Interesting overview of GTD and segmentation (memory protection at all)
 	is included in 'Intel's x86 Manual vol. 3A':
 		3.1 MEMORY MANAGEMENT OVERVIEW
-	Usage of segmentation on x86-64 (IA-32e), see:
+	Overview of different memory models utilising segmentation:
+		3.2 USING SEGMENTS
+	Usage of segmentation on x86-64 (IA-32e):
 		3.2.4 Segmentation in IA-32e Mode
-	Setting up segment registers (not x86-64 related, still interesting), see:
-		3.4.2 Segment Selectors
-	About segment registers on x86-64, see:
+	About segment registers on x86-64:
 		3.4.4 Segment Loading Instructions in IA-32e Mode
 	About segment descriptors:
 		3.4.5 Segment Descriptors
-	About GDT (Segment Descriptors Table), see:
+	About GDT (Segment Descriptors Table):
 		3.5.1 Segment Descriptor Tables
 */
 #pragma once
 #include "../stdint.h"
 
-struct GDT_Descriptor {
+typedef struct __attribute__((packed)) {
 	uint16_t size;
-	uint32_t offset;
-} __attribute__((packed));
+	uint64_t offset;
+} GDT_Descriptor;
 
-struct AccessByte {
-	unsigned pr : 1;
-	unsigned privl : 2;
-	unsigned s : 1;
-	unsigned ex : 1;
-	unsigned dc : 1;
-	unsigned rw : 1;
-	unsigned ac : 1;
-} __attribute__((packed));
+typedef struct __attribute__((packed)) {
+	uint16_t limit0;
+	uint16_t base0;
+	uint8_t base1;
+	uint8_t flags1;
+	uint8_t limit1_flags2;
+	uint8_t base2;
+} GDT_SegmentDescriptor;
 
-struct Flags {
-	unsigned limit : 4;
-	unsigned gr : 1;
-	unsigned sz : 1;
-	unsigned l : 1;
-} __attribute__((packed));
+// Minimal implementation of Protected Flat Model
+// 	3.2.2. Protected Flat Model
+// 	"Similar design is used by several popular multitasking OS'es."
 
-struct GDT_SegmentDescriptor {
-	uint16_t limit_0;
-	uint16_t base_0;
-	uint8_t base_1;
-	AccessByte access_byte;
-	Flags flags;
-} __attribute__((packed));
-
-struct GDT {
+// TODO: DLACZEGO AKURAT TAKIE?
+// https://en.wikipedia.org/wiki/X86_memory_segmentation  (later developments)
+// https://stackoverflow.com/questions/21165678/why-64-bit-mode-long-mode-doesnt-use-segment-registers
+// https://newbedev.com/linux-memory-segmentation
+// "Jak to jest z tą segmentacją na x86-64?" - ciekawy temat na artykuł
+typedef struct __attribute__((packed, aligned(0x1000))) {
 	GDT_SegmentDescriptor null;
 	GDT_SegmentDescriptor kernel_code;
 	GDT_SegmentDescriptor kernel_data;
-	GDT_SegmentDescriptor user_null;
 	GDT_SegmentDescriptor user_code;
 	GDT_SegmentDescriptor user_data;
-} __attribute__((packed)) __attribute__((aligned(0x1000)));
+} GDT;
+// https://stackoverflow.com/questions/11770451/what-is-the-meaning-of-attribute-packed-aligned4
+// __attribute__((packed)) -> use the smallest possible space for structu (avoid padding)
+// __attribute__((aligned(0x1000))) ->  its start address can be divided by 0x1000
+
+void init_gdt(void);
+
+extern GDT global_descriptor_table;
+extern void load_gdt(GDT_Descriptor *gdt_descriptor_ptr);

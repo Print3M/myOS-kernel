@@ -4,9 +4,12 @@
 void Framebuffer__set_pixel(Framebuffer *self, uint16_t x, uint16_t y, uint64_t color) {
 	// Write :color into calculated :framebuffer address
 	// address = framebuffer's base address + y offset (from base adress) + x offset (from y)
-	*(uint32_t *) ((uint8_t *) self->base_address +
-				   (y * self->pixels_per_scanline * self->bytes_per_pixel) +
-				   (x * self->bytes_per_pixel)) = color;
+	uint64_t *pixel =
+		((uint8_t *) self->base_address + (y * self->pixels_per_scanline * self->bytes_per_pixel) +
+		 (x * self->bytes_per_pixel));
+
+	*pixel = color;
+
 }
 
 void Framebuffer__clear_screen(Framebuffer *self) {

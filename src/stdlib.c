@@ -12,7 +12,6 @@ void printf(char *fmt, ...) {
 
 size_t str_len(char *str) {
 	// Returns string length without '\0' char
-
 	size_t count = 0;
 
 	while (str[count] != '\0') {

@@ -1,11 +1,12 @@
 [bits 64]
 
 section .text:
-    global __cpuid
-    global is_long_mode
+    global _cpuid
+    global write_msr
+    global read_msr
 
-__cpuid:
-    ; void __cpuid(uint32_t cpuid_eax, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx);
+_cpuid:
+    ; void _cpuid(uint32_t cpuid_eax, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx);
     mov eax, edi
     cpuid
 
@@ -38,15 +39,26 @@ __cpuid:
         mov dword [r8], edx
         jmp .return
 
-is_long_mode:
-    ; bool is_long_mode(void)
-    mov eax, 80000001h
-    cpuid
-    test edx, 1 << 29 ; Check if Long Mode bit is set    
-    xor eax, eax
-    jz .true
-    ret ; Return false (0)
+write_msr:
+    ; void write_msr(uint64_t msr_no, uint64_t value);    
+    ; value: higher 32 bits -> edx && lower 32 bits -> eax
+    mov ecx, edi   ; ecx = msr_no
+    mov eax, esi   ; lower bits -> eax
+    
+    ; higher bits -> edx
+    mov rdx, rsi
+    shr rdx, 32
 
-    .true:
-        mov eax, 1 ; Return true (1)
-        ret
+    wrmsr
+    ret
+
+read_msr:
+    ; uint64_t read_msr(uint64_t msr_no);
+    mov ecx, edi   ; ecx = msr_no
+    rdmsr          ; returns 64-bit value stored in edx:eax (both 32-bit)
+
+    shl rdx, 32    ; shift edx to higher bits (0:31 -> 32:64)
+    
+    ; add edx to higher bits of rax
+    or rax, rdx
+    ret

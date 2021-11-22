@@ -17,12 +17,12 @@ void kprint_pmem_info(void) {
 
 	printf("\t free: frames = %d, memory = %dMB \n",
 		   physical_memory.free_frames,
-		   physical_memory.free_memory / 1024 / 1024);
+		   physical_memory.free_frames * FRAME_SZ / 1024 / 1024);
 	printf("\t used: frames = %d, memory = %dMB \n",
 		   physical_memory.used_frames,
-		   physical_memory.used_memory / 1024 / 1024);
+		   physical_memory.used_frames * FRAME_SZ / 1024 / 1024);
 	printf("\t reserved: frames = %d, memory = %dMB \n",
 		   physical_memory.reserved_frames,
-		   physical_memory.reserved_memory / 1024 / 1024);
+		   physical_memory.reserved_frames * FRAME_SZ / 1024 / 1024);
 	printf("\t size of array: %dMB \n", PhysicalMemory__get_frames_array_sz() / 1024 / 1024);
 }
