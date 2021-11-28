@@ -12,11 +12,6 @@ PML4_Entry PML4[512] __attribute__((aligned(0x1000)));
 extern void _enable_cpu_4_level_paging();
 extern void _get_cr4();
 
-size_t page_entries = 0;
-size_t pdpt_entries = 0;
-size_t pd_entries = 0;
-size_t pml4_entries = 0;
-
 void set_cr3_register(uint64_t paddr, bool pwt, bool pcd) {
 	/*
 		:paddr - physical address of first paging-translation struct
@@ -76,8 +71,6 @@ void map_vaddr_to_paddr(void *vaddr, void *paddr) {
 		pml4_entry->PDPT_addr = (uint64_t) PDPT >> PAGE_OFFSET_BITS;
 		pml4_entry->present = true;
 		pml4_entry->rw = true;
-
-		pml4_entries++;
 	} else {
 		PDPT = (PDPT_Entry *) (pml4_entry->PDPT_addr << PAGE_OFFSET_BITS);
 	}
@@ -94,8 +87,6 @@ void map_vaddr_to_paddr(void *vaddr, void *paddr) {
 		pdpt_entry->PD_addr = (uint64_t) PD >> PAGE_OFFSET_BITS;
 		pdpt_entry->present = true;
 		pdpt_entry->rw = true;
-
-		pdpt_entries++;
 	} else {
 		PD = (PD_Entry *) (pdpt_entry->PD_addr << PAGE_OFFSET_BITS);
 	}
@@ -112,8 +103,6 @@ void map_vaddr_to_paddr(void *vaddr, void *paddr) {
 		pd_entry->PT_addr = (uint64_t) PT >> PAGE_OFFSET_BITS;
 		pd_entry->present = true;
 		pd_entry->rw = true;
-
-		pd_entries++;
 	} else {
 		PT = (PT_Entry *) (pd_entry->PT_addr << PAGE_OFFSET_BITS);
 	}
@@ -123,7 +112,6 @@ void map_vaddr_to_paddr(void *vaddr, void *paddr) {
 	pt_entry->page_addr = (uint64_t) paddr >> PAGE_OFFSET_BITS;
 	pt_entry->present = true;
 	pt_entry->rw = true;
-	page_entries++;
 }
 
 bool is_page_present(void *vaddr) {
@@ -152,7 +140,7 @@ bool is_page_present(void *vaddr) {
 	return pt_entry->present;
 }
 
-void init_paging(Framebuffer *framebuffer) {
+paging_status init_paging(Framebuffer *framebuffer) {
 	// Intel Manual vol. 3:
 	//  4.1.1 - specific options to set for 4-level paging
 	_enable_cpu_4_level_paging();
@@ -173,10 +161,13 @@ void init_paging(Framebuffer *framebuffer) {
 		map_vaddr_to_paddr(addr, addr);
 	}
 
-	printf("\nPage entries=%d \n", page_entries);
-	printf("PD entries=%d \n", pdpt_entries);
-	printf("PDPT entries=%d \n", pdpt_entries);
-	printf("PML4 entries=%d \n\n", pml4_entries);
-
+	// Load PML4 structure -> enable paging
 	set_cr3_register((uint64_t) &PML4, false, false);
+
+	// Test paging abilities
+	size_t test_addr = 0x99999999999; // Way more than physical memory
+	uint8_t *test_addr_ptr = (uint8_t *) test_addr;
+	map_vaddr_to_paddr((void *) test_addr, (void *) 0x0);
+	*test_addr_ptr = 123;
+	return *test_addr_ptr == 123 ? PAGING_INIT_SUCCESS : PAGING_INIT_ERROR;
 }

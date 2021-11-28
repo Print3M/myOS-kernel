@@ -7,7 +7,7 @@ LDS = kernel.ld
 ASM = nasm
 CC = gcc
 
-CFLAGS = -ffreestanding -fshort-wchar -std=c11 -nostdlib -Wno-builtin-macro-redefined -nostdinc -pedantic -Wall -Wextra
+CFLAGS = -ffreestanding -fshort-wchar -std=c11 -nostdlib -Wno-builtin-macro-redefined -nostdinc -pedantic -Wall -Wextra -mno-red-zone 
 LDFLAGS = -T $(LDS) -static -Bsymbolic -nostdlib
 ASMFLAGS = -f elf64
 
@@ -21,19 +21,28 @@ FONT = $(FONTDIR)/zap-light16.psf
 
 rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
 
+INTERRUPTS_OBJECT_PATH = $(OBJDIR)/idt/interrupts.o
+INTERRUPTS_SOURCE_PATH = $(SRCDIR)/idt/interrupts.c
+
 SRC = $(call rwildcard,$(SRCDIR),*.c)          
 ASMSRC = $(call rwildcard,$(SRCDIR),*.asm)          
 OBJS = $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRC))
 OBJS += $(patsubst $(SRCDIR)/%.asm, $(OBJDIR)/%_asm.o, $(ASMSRC))
 DIRS = $(wildcard $(SRCDIR)/*)
 
+
 kernel: $(OBJS) link
+
+$(INTERRUPTS_OBJECT_PATH): $(INTERRUPTS_SOURCE_PATH)
+	@echo !=== INTERRUPTS COMPILING ===!
+	@mkdir -p $(@D)
+	$(CC) -mgeneral-regs-only -ffreestanding -c $^ -o $@
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	@echo !==== COMPILING ====!
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c $^ -o $@
-
+ 
 $(OBJDIR)/%_asm.o: $(SRCDIR)/%.asm
 	@echo !====== NASM =======!
 	$(ASM) $(ASMFLAGS) $^ -o $@  

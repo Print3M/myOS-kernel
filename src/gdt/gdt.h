@@ -16,10 +16,15 @@
 #pragma once
 #include "../stdint.h"
 
+#define KERNEL_CODE_SEGMENT_SELECTOR 8
+#define KERNEL_DATA_SEGMENT_SELECTOR 16
+#define USER_CODE_SEGMENT_SELECTOR	 24
+#define USER_DATA_SEGMENT_SELECTOR	 32
+
 typedef struct __attribute__((packed)) {
 	uint16_t size;
 	uint64_t offset;
-} GDT_Descriptor;
+} GDTR;
 
 typedef struct __attribute__((packed)) {
 	uint16_t limit0;
@@ -33,12 +38,6 @@ typedef struct __attribute__((packed)) {
 // Minimal implementation of Protected Flat Model
 // 	3.2.2. Protected Flat Model
 // 	"Similar design is used by several popular multitasking OS'es."
-
-// TODO: DLACZEGO AKURAT TAKIE?
-// https://en.wikipedia.org/wiki/X86_memory_segmentation  (later developments)
-// https://stackoverflow.com/questions/21165678/why-64-bit-mode-long-mode-doesnt-use-segment-registers
-// https://newbedev.com/linux-memory-segmentation
-// "Jak to jest z tą segmentacją na x86-64?" - ciekawy temat na artykuł
 typedef struct __attribute__((packed, aligned(0x1000))) {
 	GDT_SegmentDescriptor null;
 	GDT_SegmentDescriptor kernel_code;
@@ -53,4 +52,4 @@ typedef struct __attribute__((packed, aligned(0x1000))) {
 void init_gdt(void);
 
 extern GDT global_descriptor_table;
-extern void load_gdt(GDT_Descriptor *gdt_descriptor_ptr);
+extern void load_gdt(GDTR *gdtr_ptr);

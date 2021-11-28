@@ -13,6 +13,10 @@
 #define BITS_9_MASK		 0x1ff
 #define PAGE_OFFSET_BITS 12
 
+typedef uint8_t paging_status;
+#define PAGING_INIT_ERROR 0x0
+#define PAGING_INIT_SUCCESS	0x1
+
 /*
 	Every paging structure is 4096 Bytes in size and contains a
 	number of individual entries. With the 4-level paging modes,
@@ -103,10 +107,5 @@ typedef struct __attribute__((packed)) {
 	uint8_t xd : 1;
 } PML4_Entry; // PageMapLevel4
 
-void init_paging(Framebuffer *framebuffer);
 void map_vaddr_to_paddr(void *vaddr, void *paddr);
-
-extern size_t page_entries;
-extern size_t pdpt_entries;
-extern size_t pd_entries;
-extern size_t pml4_entries;
+paging_status init_paging(Framebuffer *framebuffer);

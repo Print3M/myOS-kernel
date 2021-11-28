@@ -3,14 +3,13 @@
 #include "cpu/cpu.h"
 #include "framebuffer/framebuffer.h"
 #include "gdt/gdt.h"
+#include "idt/idt.h"
 #include "kutils.h"
 #include "memory/mmap.h"
 #include "memory/paging.h"
 #include "memory/pmem.h"
 #include "stdint.h"
 #include "stdlib.h"
-
-uint16_t dupa = 0xff;
 
 void _start(BootloaderData *bootloader_data) {
 	ConsoleCursor cursor = {
@@ -41,32 +40,21 @@ void _start(BootloaderData *bootloader_data) {
 	init_gdt();
 	kprint_succ("GDT initalization success");
 
-	init_paging(bootloader_data->framebuffer);
-	kprint_succ("4-level paging initialization success");
+	paging_status paging_s = init_paging(bootloader_data->framebuffer);
 
-	// Check paging
-	uint8_t *a = 0x9000000000;
-	map_vaddr_to_paddr((void *) a, (void *) 0x1000);
-	*a = 69;
-	*a = 69;
+	if (paging_s == PAGING_INIT_SUCCESS) {
+		kprint_succ("4-level paging initialization success");
+	} else {
+		kprint_err("4-level paging initialization error");
+	}
 
-	printf("\nValue at address 0x9000000000 = %d \n", *a);
+	init_idt();
+	kprint_succ("IDT initialization success");
 
-
-	// kprint_succ("initialized succesfully \n");
-
-	// kprint_pmem_info();
-	// printf("Page entries=%d \n", page_entries);
-	// printf("PD entries=%d \n", pdpt_entries);
-	// printf("PDPT entries=%d \n", pdpt_entries);
-	// printf("PML4 entries=%d \n", pml4_entries);
-
-	// Test paging
-	// void *frame = pmem_request_frame();
-	// map_vaddr_to_paddr((void *) 0x8000000000, frame);
-	// uint64_t *test = (uint64_t) 0x8000000000;
-	// *test = 696969;
-	// printf("Test=%d\n", *test);
+	// Page fault
+	__asm__ volatile("int $0x0e");
+	// int* a = 0x8000000000000;
+	// *a = 10;
 
 	for (;;)
 		;

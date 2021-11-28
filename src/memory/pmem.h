@@ -6,7 +6,7 @@
 
 #define FRAME_SZ 4096 // In bytes
 
-typedef uint16_t pmem_status;
+typedef uint8_t pmem_status;
 #define PMEM_INIT_ERROR	  0x0000
 #define PMEM_INIT_SUCCESS 0x0001
 

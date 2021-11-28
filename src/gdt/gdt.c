@@ -11,7 +11,7 @@
 
 */
 
-GDT global_descriptor_table = {
+GDT gdt = {
 	.null = {.limit0 = 0x0,
 			 .base0 = 0x0,
 			 .base1 = 0x0,
@@ -27,8 +27,8 @@ GDT global_descriptor_table = {
 	.kernel_data = {.limit0 = 0x0,
 					.base0 = 0x0,
 					.base1 = 0x0,
-					.flags1 = 0x92,			// 10010010
-					.limit1_flags2 = 0xa0,  // 10100000
+					.flags1 = 0x92,		   // 10010010
+					.limit1_flags2 = 0xa0, // 10100000
 					.base2 = 0x0},
 	.user_code = {.limit0 = 0x0,
 				  .base0 = 0x0,
@@ -44,7 +44,6 @@ GDT global_descriptor_table = {
 				  .base2 = 0x0},
 };
 
-GDT_Descriptor gdt_descriptor = {.size = sizeof(GDT) - 1,
-								 .offset = (uint64_t) &global_descriptor_table};
+GDTR gdtr = {.size = sizeof(GDT) - 1, .offset = (uint64_t) &gdt};
 
-void init_gdt(void) { load_gdt(&gdt_descriptor); }
+void init_gdt(void) { load_gdt(&gdtr); }
