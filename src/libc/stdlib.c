@@ -1,7 +1,7 @@
-#include "console/console.h"
-#include "stdarg.h"
-#include "stdbool.h"
-#include "stdint.h"
+#include <console/console.h>
+#include <libc/stdarg.h>
+#include <libc/stdbool.h>
+#include <libc/stdint.h>
 
 void printf(char *fmt, ...) {
 	va_list args;

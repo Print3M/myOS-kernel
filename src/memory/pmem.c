@@ -1,7 +1,7 @@
-#include "pmem.h"
-#include "../stdbool.h"
-#include "../stdlib.h"
-#include "mmap.h"
+#include <pmem.h>
+#include <mmap.h>
+#include <libc/stdbool.h>
+#include <libc/stdlib.h>
 
 PhysicalMemory physical_memory = {.initialized = false};
 

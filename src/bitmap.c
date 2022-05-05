@@ -1,6 +1,6 @@
 #include "bitmap.h"
-#include "stdbool.h"
-#include "stdint.h"
+#include <libc/stdbool.h>
+#include <libc/stdint.h>
 
 void __get_bitmap_offset(uint64_t index, uint64_t *byte_offset, uint8_t *bit_offset) {
 	// Params:

@@ -7,7 +7,7 @@ LDS = kernel.ld
 ASM = nasm
 CC = gcc
 
-CFLAGS = -ffreestanding -fshort-wchar -std=c11 -nostdlib -Wno-builtin-macro-redefined -nostdinc -pedantic -Wall -Wextra -mno-red-zone 
+CFLAGS = -ffreestanding -fshort-wchar -std=c11 -nostdlib -Wno-builtin-macro-redefined -nostdinc -pedantic -Wall -Wextra -mno-red-zone -I ./src
 LDFLAGS = -T $(LDS) -static -Bsymbolic -nostdlib
 ASMFLAGS = -f elf64
 
@@ -51,6 +51,7 @@ link:
 	@echo !==== LINKING ====!
 	$(LD) $(LDFLAGS) -o $(BUILDDIR)/kernel.elf $(OBJS)
 
+# Remove compiled object files
 clean:
 	@rm -r $(OBJDIR)/*
 

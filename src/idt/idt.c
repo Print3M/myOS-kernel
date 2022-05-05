@@ -1,4 +1,4 @@
-#include "./idt.h"
+#include <idt/idt.h>
 #include "../gdt/gdt.h"
 #include "../stdint.h"
 #include "../stdlib.h"

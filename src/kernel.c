@@ -1,15 +1,15 @@
-#include "bootloader.h"
-#include "console/console.h"
-#include "cpu/cpu.h"
-#include "framebuffer/framebuffer.h"
-#include "gdt/gdt.h"
-#include "idt/idt.h"
-#include "kutils.h"
-#include "memory/mmap.h"
-#include "memory/paging.h"
-#include "memory/pmem.h"
-#include "stdint.h"
-#include "stdlib.h"
+#include <bootloader.h>
+#include <console/console.h>
+#include <cpu/cpu.h>
+#include <framebuffer/framebuffer.h>
+#include <gdt/gdt.h>
+#include <idt/idt.h>
+#include <kutils.h>
+#include <memory/mmap.h>
+#include <memory/paging.h>
+#include <memory/pmem.h>
+#include <stdint.h>
+#include <stdlib.h>
 
 void _start(BootloaderData *bootloader_data) {
 	ConsoleCursor cursor = {

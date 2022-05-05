@@ -1,8 +1,8 @@
 #pragma once
-#include "../bootloader.h"
-#include "../stdbool.h"
-#include "../stdint.h"
-#include "mmap.h"
+#include <bootloader.h>
+#include <libc/stdbool.h>
+#include <libc/stdint.h>
+#include <mmap.h>
 
 #define FRAME_SZ 4096 // In bytes
 

@@ -1,8 +1,8 @@
 #pragma once
-#include "../framebuffer/framebuffer.h"
-#include "../stdarg.h"
-#include "../stdbool.h"
-#include "../stdint.h"
+#include <framebuffer/framebuffer.h>
+#include <libc/stdarg.h>
+#include <libc/stdbool.h>
+#include <libc/stdint.h>
 
 #define CURSOR_MAX_LINES 37
 #define CURSOR_MAX_COLUMNS 100

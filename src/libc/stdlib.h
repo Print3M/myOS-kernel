@@ -1,5 +1,5 @@
 #pragma once
-#include "stdint.h"
+#include <libc/stdint.h>
 
 // In/out functions
 void printf(char *fmt, ...);

@@ -1,8 +1,8 @@
 #pragma once
-#include "stdint.h"
-#include "console/console.h"
-#include "framebuffer/framebuffer.h"
-#include "memory/mmap.h"
+#include <libc/stdint.h>
+#include <console/console.h>
+#include <framebuffer/framebuffer.h>
+#include <memory/mmap.h>
 
 typedef struct {
 	Framebuffer *framebuffer;

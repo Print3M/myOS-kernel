@@ -1,5 +1,5 @@
-#include "memory/pmem.h"
-#include "stdlib.h"
+#include <memory/pmem.h>
+#include <libc/stdlib.h>
 
 void kprint_err(const char *msg) { printf("[!] Kernel error: %s \n", msg); }
 
