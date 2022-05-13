@@ -14,7 +14,7 @@
 		3.5.1 Segment Descriptor Tables
 */
 #pragma once
-#include "../stdint.h"
+#include <libc/stdint.h>
 
 #define KERNEL_CODE_SEGMENT_SELECTOR 8
 #define KERNEL_DATA_SEGMENT_SELECTOR 16

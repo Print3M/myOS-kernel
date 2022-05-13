@@ -1,9 +1,10 @@
-#include "console.h"
-#include "../framebuffer/framebuffer.h"
-#include "../stdarg.h"
-#include "../stdbool.h"
-#include "../stdint.h"
-#include "../stdlib.h"
+#include <console/console.h>
+#include <framebuffer/colors.h>
+#include <framebuffer/framebuffer.h>
+#include <libc/stdarg.h>
+#include <libc/stdbool.h>
+#include <libc/stdint.h>
+#include <libc/stdlib.h>
 
 Console console = {.initialized = false};
 
@@ -41,6 +42,10 @@ void ConsoleCursor__gotoxy(ConsoleCursor *self, uint16_t x, uint16_t y) {
 	self->line = y;
 }
 
+void ConsoleCursor__set_fg_color(ConsoleCursor *self, uint32_t color) { self->fg_color = color; }
+
+void ConsoleCursor__set_bg_color(ConsoleCursor *self, uint32_t color) { self->bg_color = color; }
+
 void Console__init(ConsoleFont *font, ConsoleCursor *cursor, Framebuffer *framebuffer) {
 	if (console.initialized) {
 		return;
@@ -69,16 +74,14 @@ void Console__print_char(Console *self, uint16_t chr) {
 			char *glyph_bitmap =
 				(char *) self->font->glyph_buffer + (chr * self->font->psf_header->charsize);
 
-			Glyph glyph = {
-				.bitmap = glyph_bitmap,
-				.y_off = self->cursor->line * self->font->glyph_height,
-				.x_off = self->cursor->column * self->font->glyph_width,
-				.width = self->font->glyph_width,
-				.height = self->font->glyph_height,
-				.fg_color = 0xffffffff,
-				.bg_color = 0x00000000,
-			};
-			Framebuffer__print_glyph(self->framebuffer, &glyph);
+			Glyph glyph = {.bitmap = glyph_bitmap,
+						   .y_off = self->cursor->line * self->font->glyph_height,
+						   .x_off = self->cursor->column * self->font->glyph_width,
+						   .width = self->font->glyph_width,
+						   .height = self->font->glyph_height,
+						   .fg_color = self->cursor->fg_color,
+						   .bg_color = self->cursor->bg_color};
+			Framebuffer__print_glyph(&glyph);
 			ConsoleCursor__next(self->cursor);
 		}
 	}
@@ -110,9 +113,9 @@ void Console__print_int(Console *self, uint64_t num, uint8_t base) {
 void Console__printf(Console *self, char *str, va_list args) {
 	// Dynamic list of arguments
 	char buf[4096]; // Buffer for result string
-	memset(buf, 0x0, 4096);
+	memset(buf, 0, 4096);
 	char temp_buf[64]; // 8*8 = 64 bits + 9th byte for '\0';
-	memset(temp_buf, 0x0, 64);
+	memset(temp_buf, 0, 64);
 
 	size_t len = str_len(str);
 	size_t temp_len = 0;
@@ -134,6 +137,13 @@ void Console__printf(Console *self, char *str, va_list args) {
 					j += temp_len;
 					break;
 				}
+				// case 'c': {
+				// 	// If %c
+				// 	uint8_t arg = va_arg(args, uint8_t);
+				// 	buf[j] = arg;
+				// 	j += 1;
+				// 	break;
+				// }
 				case 'd': {
 					// If %d
 					uint64_t arg = va_arg(args, uint64_t);

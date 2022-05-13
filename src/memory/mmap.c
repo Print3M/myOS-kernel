@@ -1,6 +1,6 @@
-#include "mmap.h"
-#include "../bootloader.h"
-#include "../stdint.h"
+#include <memory/mmap.h>
+#include <bootloader.h>
+#include <libc/stdint.h>
 
 EfiMemoryDescriptor *
 get_memory_descriptor(EfiMemoryDescriptor *memory_map, uint64_t n, size_t descriptor_sz) {

@@ -1,15 +1,18 @@
+#include <gdt/gdt.h>
 #include <idt/idt.h>
-#include "../gdt/gdt.h"
-#include "../stdint.h"
-#include "../stdlib.h"
-#include "./interrupts.h"
+#include <idt/interrupts.h>
+#include <libc/stdint.h>
+#include <libc/stdlib.h>
 
 IDT_DescriptionEntry idt[ALL_IDT_ENTRIES];
 
-void _set_interrupt(uint8_t idt_index, void *handler, uint16_t segment_selector) {
+void _set_idt_entry(uint8_t gate_type,
+					uint8_t idt_index,
+					void *handler,
+					uint16_t segment_selector) {
 	IDT_DescriptionEntry *idt_entry = &idt[idt_index];
 	idt_entry->present = 1;
-	idt_entry->gate_type = INTERRUPT_GATE;
+	idt_entry->gate_type = gate_type;
 	idt_entry->segment_selector = segment_selector;
 
 	uint32_t offset = (uint32_t) handler;
@@ -21,10 +24,17 @@ void _set_interrupt(uint8_t idt_index, void *handler, uint16_t segment_selector)
 }
 
 void init_idt(void) {
-	// Load page fault handler
-	_set_interrupt(PAGE_FAULT_INDEX, (void *) &page_fault_handler, KERNEL_CODE_SEGMENT_SELECTOR);
+	// Load interrupt handlers into IDT
+	_set_idt_entry(INTERRUPT_GATE,
+				   PAGE_FAULT_INDEX,
+				   (void *) &page_fault_handler,
+				   KERNEL_CODE_SEGMENT_SELECTOR);
+	_set_idt_entry(TRAP_GATE,
+				   DIVIDE_BY_ZERO_INDEX,
+				   (void *) &divide_by_zero_handler,
+				   KERNEL_CODE_SEGMENT_SELECTOR);
 
-	// Load IDTR
+	// Load IDT to IDTR
 	uint16_t limit = sizeof(IDT_DescriptionEntry) * ALL_IDT_ENTRIES;
 	IDTR idtr = {.limit = limit, .base_addr = &idt};
 	__asm__ volatile("lidt %0" ::"m"(idtr));

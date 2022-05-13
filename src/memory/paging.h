@@ -4,8 +4,11 @@
 	4.5   - specific 4-level paging documentation
 */
 #pragma once
-#include "../framebuffer/framebuffer.h"
-#include "../stdint.h"
+#include <framebuffer/framebuffer.h>
+#include <libc/stdbool.h>
+#include <libc/stdint.h>
+
+#define IA32_EFER 0xC0000080
 
 #define EFER_LME		 8
 #define CR3_PWT			 3
@@ -14,8 +17,8 @@
 #define PAGE_OFFSET_BITS 12
 
 typedef uint8_t paging_status;
-#define PAGING_INIT_ERROR 0x0
-#define PAGING_INIT_SUCCESS	0x1
+#define PAGING_INIT_ERROR	0x0
+#define PAGING_INIT_SUCCESS 0x1
 
 /*
 	Every paging structure is 4096 Bytes in size and contains a
@@ -107,5 +110,6 @@ typedef struct __attribute__((packed)) {
 	uint8_t xd : 1;
 } PML4_Entry; // PageMapLevel4
 
+bool is_page_present(void *vaddr);
 void map_vaddr_to_paddr(void *vaddr, void *paddr);
 paging_status init_paging(Framebuffer *framebuffer);

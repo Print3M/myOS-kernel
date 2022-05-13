@@ -1,5 +1,5 @@
 #pragma once
-#include "stdint.h"
+#include <libc/stdint.h>
 
 typedef uint8_t bool;
 

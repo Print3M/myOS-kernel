@@ -1,6 +1,6 @@
 #pragma once
-#include "stdint.h"
-#include "stdbool.h"
+#include <libc/stdint.h>
+#include <libc/stdbool.h>
 
 typedef struct {
     size_t size;

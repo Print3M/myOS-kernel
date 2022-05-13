@@ -85,3 +85,31 @@ char *itoa(uint64_t num, char *buf, uint8_t base) {
 
 	return buf;
 }
+
+uint8_t strcmp(const char *str1, const char *str2) {
+	while (*str1) {
+		if (*str1 != *str2) {
+			break;
+		}
+
+		str1++;
+		str2++;
+	}
+
+	// return the ASCII difference
+	return *(const uint8_t *) str1 - *(const uint8_t *) str2;
+}
+
+uint8_t strncmp(const char *str1, const char *str2, size_t n) {
+	while (n && *str1 && (*str1 == *str2)) {
+		++str1;
+		++str2;
+		--n;
+	}
+
+	if (n == 0) {
+		return 0;
+	} else {
+		return *(uint8_t *) str1 - *(uint8_t *) str2;
+	}
+}

@@ -1,5 +1,5 @@
 #pragma once
-#include "../stdint.h"
+#include <libc/stdint.h>
 
 #define PAGE_SZ 4096 // In bytes
 

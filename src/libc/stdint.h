@@ -2,7 +2,6 @@
 
 #define NULL 0
 
-// Decimal
 typedef unsigned char uint8_t;
 typedef signed char int8_t;
 

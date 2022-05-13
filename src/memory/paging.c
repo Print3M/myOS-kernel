@@ -1,11 +1,11 @@
-#include "paging.h"
-#include "../cpu/cpu.h"
-#include "../framebuffer/framebuffer.h"
-#include "../kutils.h"
-#include "../stdbool.h"
-#include "../stdint.h"
-#include "../stdlib.h"
-#include "pmem.h"
+#include <memory/paging.h>
+#include <cpu/cpu.h>
+#include <framebuffer/framebuffer.h>
+#include <kutils.h>
+#include <libc/stdbool.h>
+#include <libc/stdint.h>
+#include <libc/stdlib.h>
+#include <memory/pmem.h>
 
 PML4_Entry PML4[512] __attribute__((aligned(0x1000)));
 
@@ -14,12 +14,12 @@ extern void _get_cr4();
 
 void set_cr3_register(uint64_t paddr, bool pwt, bool pcd) {
 	/*
-		:paddr - physical address of first paging-translation struct
-		:pwt   - page-level write-through
-		:pcd   - page-level cache disable
+		IN :paddr - physical address of first paging-translation struct
+		IN :pwt   - page-level write-through
+		IN :pcd   - page-level cache disable
 
 		What is going on here? Checkout:
-			Intel Manual vol. 3, chapter: 4.5 - 4-level paging
+		Intel Manual vol. 3, chapter: 4.5 - 4-level paging
 	*/
 	uint64_t cr3 = paddr;
 
@@ -115,6 +115,7 @@ void map_vaddr_to_paddr(void *vaddr, void *paddr) {
 }
 
 bool is_page_present(void *vaddr) {
+	// Check if vaddr has its page in the page table
 	VaddrIndexes indexes;
 	_extract_vaddr_paging_indexes((uint64_t) vaddr, &indexes);
 
@@ -122,20 +123,20 @@ bool is_page_present(void *vaddr) {
 	if (pml4_entry->present == false) {
 		return false;
 	}
-	PDPT_Entry *PDPT = (PDPT_Entry *) (pml4_entry->PDPT_addr << PAGE_OFFSET_BITS);
 
+	PDPT_Entry *PDPT = (PDPT_Entry *) (pml4_entry->PDPT_addr << PAGE_OFFSET_BITS);
 	PDPT_Entry *pdpt_entry = &PDPT[indexes.pdpt_entry];
 	if (pdpt_entry->present == false) {
 		return false;
 	}
+	
 	PD_Entry *PD = (PD_Entry *) (pdpt_entry->PD_addr << PAGE_OFFSET_BITS);
-
 	PD_Entry *pd_entry = &PD[indexes.pd_entry];
 	if (pd_entry->present == false) {
 		return false;
 	}
+	
 	PT_Entry *PT = (PT_Entry *) (pd_entry->PT_addr << PAGE_OFFSET_BITS);
-
 	PT_Entry *pt_entry = &PT[indexes.pt_entry];
 	return pt_entry->present;
 }

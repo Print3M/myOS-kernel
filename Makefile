@@ -34,9 +34,10 @@ DIRS = $(wildcard $(SRCDIR)/*)
 kernel: $(OBJS) link
 
 $(INTERRUPTS_OBJECT_PATH): $(INTERRUPTS_SOURCE_PATH)
+# Interrupts have to use only general registers
 	@echo !=== INTERRUPTS COMPILING ===!
 	@mkdir -p $(@D)
-	$(CC) -mgeneral-regs-only -ffreestanding -c $^ -o $@
+	$(CC) $(CFLAGS) -mgeneral-regs-only -c $^ -o $@
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	@echo !==== COMPILING ====!
@@ -79,4 +80,11 @@ buildimg:
 	mcopy -i $(BUILDDIR)/$(OSNAME).img $(FONT) ::
 
 run:
-	qemu-system-x86_64 -drive file=$(BUILDDIR)/$(OSNAME).img -m 256M -cpu qemu64 -drive if=pflash,format=raw,unit=0,file="$(OVMFDIR)/OVMF_CODE.fd",readonly=on -drive if=pflash,format=raw,unit=1,file="$(OVMFDIR)/OVMF_VARS.fd" -net none
+	qemu-system-x86_64 \
+		-drive file=$(BUILDDIR)/$(OSNAME).img \
+		-m 256M \
+		-cpu qemu64 \
+		-smp 1,cores=1,threads=1 \
+		-drive if=pflash,format=raw,unit=0,file="$(OVMFDIR)/OVMF_CODE.fd",readonly=on \
+		-drive if=pflash,format=raw,unit=1,file="$(OVMFDIR)/OVMF_VARS.fd" \
+		-net none

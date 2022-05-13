@@ -12,6 +12,8 @@ typedef struct {
 	uint16_t column;
 	uint16_t max_lines;
 	uint16_t max_columns;
+	uint32_t fg_color;
+	uint32_t bg_color;
 } ConsoleCursor;
 
 typedef struct {
@@ -42,6 +44,8 @@ void ConsoleCursor__next(ConsoleCursor *self);
 void ConsoleCursor__back(ConsoleCursor *self);
 void ConsoleCursor__reset(ConsoleCursor *self);
 void ConsoleCursor__gotoxy(ConsoleCursor *self, uint16_t x, uint16_t y);
+void ConsoleCursor__set_fg_color(ConsoleCursor *self, uint32_t color);
+void ConsoleCursor__set_bg_color(ConsoleCursor *self, uint32_t color);
 
 void Console__init(ConsoleFont *font, ConsoleCursor *cursor, Framebuffer *framebuffer);
 void Console__clear_screen(Console *self);

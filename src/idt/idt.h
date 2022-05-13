@@ -4,7 +4,7 @@
 
 */
 #pragma once
-#include "../stdint.h"
+#include <libc/stdint.h>
 
 #define ALL_IDT_ENTRIES 256
 

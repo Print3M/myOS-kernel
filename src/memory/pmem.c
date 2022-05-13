@@ -1,5 +1,5 @@
-#include <pmem.h>
-#include <mmap.h>
+#include <memory/pmem.h>
+#include <memory/mmap.h>
 #include <libc/stdbool.h>
 #include <libc/stdlib.h>
 
