@@ -1,13 +1,14 @@
 #include <acpi/acpi.h>
 #include <acpi/apic/apic.h>
 #include <acpi/hpet/hpet.h>
-#include <bootloader.h>
+#include <acpi/hpet/timer.h>
 #include <console/console.h>
 #include <cpu/cpu.h>
 #include <framebuffer/colors.h>
 #include <framebuffer/framebuffer.h>
 #include <gdt/gdt.h>
 #include <idt/idt.h>
+#include <kernel.h>
 #include <kutils.h>
 #include <libc/stdint.h>
 #include <libc/stdlib.h>
@@ -15,54 +16,40 @@
 #include <memory/paging.h>
 #include <memory/pmem.h>
 
-BootloaderData *bootloader_data;
+KernelData kernel;
 
 void _start(BootloaderData *bd) {
-	bootloader_data = bd;
+	kernel.stack = (void *) bd;
+	kernel.acpi_rsdp = (ACPI_RSDP *) bd->acpi_rsdp;
+	kernel.framebuffer = bd->framebuffer;
+	kernel.memory = bd->memory;
 
-	// Framebuffer must be provided as soon as possible
-	framebuffer = bootloader_data->framebuffer;
+	kernel.console = Console__init(bd->font);
+	Console__clear_screen(kernel.console);
 
-	ConsoleCursor cursor = {.line = 0,
-							.column = 0,
-							.max_lines = CURSOR_MAX_LINES,
-							.max_columns = CURSOR_MAX_COLUMNS,
-							.fg_color = WHITE,
-							.bg_color = BLACK};
-
-	Console__init(bootloader_data->font, &cursor, bootloader_data->framebuffer);
-	Console__clear_screen(&console);
-
-	printf("Pointer: %p", bootloader_data->apic_rsdp);
-
+	kernel.cpu = CPU_init();
 	cpu_status cpu_s = check_cpu_state();
 	if (cpu_s != CPU_SUCCESS) {
 		kprint_err("CPU state error");
 	} else {
 		kprint_succ("CPU state correct");
 	}
-	get_cpu_info();
 	kprint_cpu_info();
 
-	pmem_status pmem_s = init_physical_memory(bootloader_data->memory, bootloader_data);
-	if (pmem_s != PMEM_INIT_SUCCESS) {
-		kprint_err("Physical memory initialization error");
-	} else {
-		kprint_succ("Physical memory initalization success");
-		kprint_pmem_info();
-	}
+	kernel.pmem = init_physical_memory();
+	kprint_succ("Physical memory initalization success");
+	kprint_pmem_info();
 
-	init_gdt();
+	kernel.gdt = init_gdt();
 	kprint_succ("GDT initalization success");
 
-	paging_status paging_s = init_paging(bootloader_data->framebuffer);
-	if (paging_s == PAGING_INIT_SUCCESS) {
-		kprint_succ("4-level paging initialization success");
-	} else {
-		kprint_err("4-level paging initialization error");
-	}
+	kernel.hpet_desc = HPET_init();
+	kprint_succ("HPET initialization success");
 
-	init_idt();
+	kernel.pml4 = init_paging();
+	kprint_succ("4-level paging initialization success");
+
+	kernel.idt = init_idt();
 	kprint_succ("IDT initialization success");
 
 	acpi_version version = get_acpi_version();
@@ -78,20 +65,16 @@ void _start(BootloaderData *bd) {
 			break;
 	}
 
-	HPET_DescTable *desc = get_hpet_desc_table();
-	printf("HPET addr: %p", desc);
-	printf("HPET number: %d", desc->hpet_number);
-	printf("HPET time_block: %p", desc->event_timer_block_id);
+	printf("LAPIC ID     : %d \n", APIC_get_local_id());
+	printf("APIC version : %d \n", APIC_get_version());
+	printf("HPET timers  : %d \n", HPET_get_no_timers());
+	printf("HPET enabled : %d \n", HPET_is_counter_enabled());
+	printf("HPET counter : %d \n", HPET_get_main_counter());
+	printf("HPET counter : %d \n", HPET_get_main_counter());
 
-	// printf("Pointer: %p", desc);
-	// printf("Length: %d", desc->header.length);
-
-	// int test = *((int *) 0x4000000000);
-
-	// Page fault
-	// __asm__ volatile("int $0x0");
-	// int* a = 0x8000000000000;
-	// *a = 10;
+	APIC_enable();
+	HTimer_set_one_shot(0, 1000);
+	printf("Comparator: %d \n", HTimer_get_compar(0));
 
 	for (;;)
 		;

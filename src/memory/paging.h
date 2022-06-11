@@ -7,6 +7,9 @@
 #include <framebuffer/framebuffer.h>
 #include <libc/stdbool.h>
 #include <libc/stdint.h>
+#include <memory/pmem.h>
+
+#define PAGE_SZ FRAME_SZ
 
 #define IA32_EFER 0xC0000080
 
@@ -15,10 +18,6 @@
 #define CR3_PCD			 4
 #define BITS_9_MASK		 0x1ff
 #define PAGE_OFFSET_BITS 12
-
-typedef uint8_t paging_status;
-#define PAGING_INIT_ERROR	0x0
-#define PAGING_INIT_SUCCESS 0x1
 
 /*
 	Every paging structure is 4096 Bytes in size and contains a
@@ -112,4 +111,4 @@ typedef struct __attribute__((packed)) {
 
 bool is_page_present(void *vaddr);
 void map_vaddr_to_paddr(void *vaddr, void *paddr);
-paging_status init_paging(Framebuffer *framebuffer);
+PML4_Entry *init_paging(void);

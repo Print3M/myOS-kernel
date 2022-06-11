@@ -4,7 +4,7 @@
 #include <libc/stdbool.h>
 #include <libc/stdint.h>
 
-#define CURSOR_MAX_LINES 37
+#define CURSOR_MAX_LINES   37
 #define CURSOR_MAX_COLUMNS 100
 
 typedef struct {
@@ -36,9 +36,6 @@ typedef struct {
 	bool initialized;
 } Console;
 
-// Global console object
-extern Console console;
-
 void ConsoleCursor__new_line(ConsoleCursor *self);
 void ConsoleCursor__next(ConsoleCursor *self);
 void ConsoleCursor__back(ConsoleCursor *self);
@@ -47,7 +44,7 @@ void ConsoleCursor__gotoxy(ConsoleCursor *self, uint16_t x, uint16_t y);
 void ConsoleCursor__set_fg_color(ConsoleCursor *self, uint32_t color);
 void ConsoleCursor__set_bg_color(ConsoleCursor *self, uint32_t color);
 
-void Console__init(ConsoleFont *font, ConsoleCursor *cursor, Framebuffer *framebuffer);
+Console *Console__init(ConsoleFont *font);
 void Console__clear_screen(Console *self);
 void Console__print_char(Console *self, uint16_t chr);
 void Console__print_str(Console *self, char *str);

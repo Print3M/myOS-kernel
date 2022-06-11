@@ -1,10 +1,12 @@
-#include <memory/paging.h>
+#include <acpi/apic/apic.h>
+#include <acpi/hpet/hpet.h>
 #include <cpu/cpu.h>
-#include <framebuffer/framebuffer.h>
+#include <kernel.h>
 #include <kutils.h>
 #include <libc/stdbool.h>
 #include <libc/stdint.h>
 #include <libc/stdlib.h>
+#include <memory/paging.h>
 #include <memory/pmem.h>
 
 PML4_Entry PML4[512] __attribute__((aligned(0x1000)));
@@ -65,7 +67,7 @@ void map_vaddr_to_paddr(void *vaddr, void *paddr) {
 	if (pml4_entry->present == false) {
 		// If not already present, create PDPT
 		PDPT = (PDPT_Entry *) pmem_request_frame();
-		memset(PDPT, 0, FRAME_SZ);
+		memset(PDPT, 0, PAGE_SZ);
 
 		// Set PML4 entry
 		pml4_entry->PDPT_addr = (uint64_t) PDPT >> PAGE_OFFSET_BITS;
@@ -81,7 +83,7 @@ void map_vaddr_to_paddr(void *vaddr, void *paddr) {
 	if (pdpt_entry->present == false) {
 		// If PDPT entry not present, create PD and set PDPT entry
 		PD = (PD_Entry *) pmem_request_frame();
-		memset(PD, 0, FRAME_SZ);
+		memset(PD, 0, PAGE_SZ);
 
 		// Set PDPT entry
 		pdpt_entry->PD_addr = (uint64_t) PD >> PAGE_OFFSET_BITS;
@@ -97,7 +99,7 @@ void map_vaddr_to_paddr(void *vaddr, void *paddr) {
 	if (pd_entry->present == false) {
 		// If PD entry not present, create PT and set PD entry
 		PT = (PT_Entry *) pmem_request_frame();
-		memset(PT, 0, FRAME_SZ);
+		memset(PT, 0, PAGE_SZ);
 
 		// Set PD entry
 		pd_entry->PT_addr = (uint64_t) PT >> PAGE_OFFSET_BITS;
@@ -129,19 +131,48 @@ bool is_page_present(void *vaddr) {
 	if (pdpt_entry->present == false) {
 		return false;
 	}
-	
+
 	PD_Entry *PD = (PD_Entry *) (pdpt_entry->PD_addr << PAGE_OFFSET_BITS);
 	PD_Entry *pd_entry = &PD[indexes.pd_entry];
 	if (pd_entry->present == false) {
 		return false;
 	}
-	
+
 	PT_Entry *PT = (PT_Entry *) (pd_entry->PT_addr << PAGE_OFFSET_BITS);
 	PT_Entry *pt_entry = &PT[indexes.pt_entry];
 	return pt_entry->present;
 }
 
-paging_status init_paging(Framebuffer *framebuffer) {
+void _identity_paging(void *addr, size_t n) {
+	// Perform identity paging (1:1) page frame -> virtual page
+	// NOTICE: :n will be always rounded up to full page size
+	// :addr - start address of identity paging area
+	// :n    - number of bytes
+
+	for (size_t i = 0; i < (n / (PAGE_SZ + 1)) + 1; i++) {
+		map_vaddr_to_paddr(addr, addr);
+		addr = (void *) ((uint64_t) addr + PAGE_SZ);
+	}
+}
+
+void _identity_paging_memory(void) {
+	// Identy paging (1:1) of entire memory map
+	for (size_t i = 0; i < kernel.pmem->frames; i++) {
+		void *addr = kernel.pmem->array[i].frame_addr;
+		map_vaddr_to_paddr(addr, addr);
+	}
+
+	// Identy paging for framebuffer
+	_identity_paging(kernel.framebuffer->base_address, kernel.framebuffer->buffer_size);
+
+	// Identy paging for APIC
+	_identity_paging(APIC_BASE_ADDR, 4096);
+
+	// Identy paging for HPET
+	_identity_paging(kernel.hpet_desc->base_address.address, HPET_get_mmio_sz());
+}
+
+PML4_Entry *init_paging(void) {
 	// Intel Manual vol. 3:
 	//  4.1.1 - specific options to set for 4-level paging
 	_enable_cpu_4_level_paging();
@@ -150,17 +181,7 @@ paging_status init_paging(Framebuffer *framebuffer) {
 	uint64_t msr = read_msr(IA32_EFER);
 	write_msr(IA32_EFER, set_bit(msr, EFER_LME));
 
-	// Identy paging (1:1)
-	for (size_t i = 0; i < physical_memory.frames; i++) {
-		void *addr = physical_memory.array[i].frame_addr;
-		map_vaddr_to_paddr(addr, addr);
-	}
-
-	// Identy paging for framebuffer
-	for (size_t i = 0; i < framebuffer->buffer_size / FRAME_SZ; i += 1) {
-		void *addr = (void *) ((uint64_t) framebuffer->base_address + i * FRAME_SZ);
-		map_vaddr_to_paddr(addr, addr);
-	}
+	_identity_paging_memory();
 
 	// Load PML4 structure -> enable paging
 	set_cr3_register((uint64_t) &PML4, false, false);
@@ -170,5 +191,10 @@ paging_status init_paging(Framebuffer *framebuffer) {
 	uint8_t *test_addr_ptr = (uint8_t *) test_addr;
 	map_vaddr_to_paddr((void *) test_addr, (void *) 0x0);
 	*test_addr_ptr = 123;
-	return *test_addr_ptr == 123 ? PAGING_INIT_SUCCESS : PAGING_INIT_ERROR;
+
+	if (*test_addr_ptr != 123) {
+		kpanic("Paging test failed!");
+	}
+
+	return PML4;
 }

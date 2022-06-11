@@ -12,38 +12,56 @@
 */
 
 GDT gdt = {
-	.null = {.limit0 = 0x0,
-			 .base0 = 0x0,
-			 .base1 = 0x0,
-			 .flags1 = 0x0,
-			 .limit1_flags2 = 0x0,
-			 .base2 = 0x0},
-	.kernel_code = {.limit0 = 0x0,
-					.base0 = 0x0,
-					.base1 = 0x0,
-					.flags1 = 0x9a,
-					.limit1_flags2 = 0xa0,
-					.base2 = 0x0},
-	.kernel_data = {.limit0 = 0x0,
-					.base0 = 0x0,
-					.base1 = 0x0,
-					.flags1 = 0x92,		   // 10010010
-					.limit1_flags2 = 0xa0, // 10100000
-					.base2 = 0x0},
-	.user_code = {.limit0 = 0x0,
-				  .base0 = 0x0,
-				  .base1 = 0x0,
-				  .flags1 = 0x9a,
-				  .limit1_flags2 = 0xa0,
-				  .base2 = 0x0},
-	.user_data = {.limit0 = 0x0,
-				  .base0 = 0x0,
-				  .base1 = 0x0,
-				  .flags1 = 0x92,
-				  .limit1_flags2 = 0xa0,
-				  .base2 = 0x0},
+	.null =
+		{
+			.limit0 = 0x0,
+			.base0 = 0x0,
+			.base1 = 0x0,
+			.flags1 = 0x0,
+			.limit1_flags2 = 0x0,
+			.base2 = 0x0,
+		},
+	.kernel_code =
+		{
+			.limit0 = 0x0,
+			.base0 = 0x0,
+			.base1 = 0x0,
+			.flags1 = 0x9a,
+			.limit1_flags2 = 0xa0,
+			.base2 = 0x0,
+		},
+	.kernel_data =
+		{
+			.limit0 = 0x0,
+			.base0 = 0x0,
+			.base1 = 0x0,
+			.flags1 = 0x92,		   // 10010010
+			.limit1_flags2 = 0xa0, // 10100000
+			.base2 = 0x0,
+		},
+	.user_code =
+		{
+			.limit0 = 0x0,
+			.base0 = 0x0,
+			.base1 = 0x0,
+			.flags1 = 0x9a,
+			.limit1_flags2 = 0xa0,
+			.base2 = 0x0,
+		},
+	.user_data =
+		{
+			.limit0 = 0x0,
+			.base0 = 0x0,
+			.base1 = 0x0,
+			.flags1 = 0x92,
+			.limit1_flags2 = 0xa0,
+			.base2 = 0x0,
+		},
 };
 
 GDTR gdtr = {.size = sizeof(GDT) - 1, .offset = (uint64_t) &gdt};
 
-void init_gdt(void) { load_gdt(&gdtr); }
+GDT *init_gdt(void) {
+	load_gdt(&gdtr);
+	return &gdt;
+}

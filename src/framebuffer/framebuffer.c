@@ -1,23 +1,22 @@
 #include <framebuffer/framebuffer.h>
+#include <kernel.h>
 #include <libc/stdint.h>
-
-// TODO: What is something use global framebuffer before initailization
-Framebuffer *framebuffer = NULL;
 
 void Framebuffer__set_pixel(uint16_t x, uint16_t y, uint64_t color) {
 	// Write :color into calculated :framebuffer address
 	// address = framebuffer's base address + y offset (from base adress) + x offset (from y)
 	uint64_t *pixel =
-		((uint8_t *) framebuffer->base_address + (y * framebuffer->pixels_per_scanline * framebuffer->bytes_per_pixel) +
-		 (x * framebuffer->bytes_per_pixel));
+		((uint8_t *) kernel.framebuffer->base_address +
+		 (y * kernel.framebuffer->pixels_per_scanline * kernel.framebuffer->bytes_per_pixel) +
+		 (x * kernel.framebuffer->bytes_per_pixel));
 
 	*pixel = color;
 }
 
 void Framebuffer__set_all_pixels(uint64_t color) {
 	// Set solid color for entire framebuffer
-	for (uint16_t x = 0; x < framebuffer->width; x++) {
-		for (uint16_t y = 0; y < framebuffer->height; y++) {
+	for (uint16_t x = 0; x < kernel.framebuffer->width; x++) {
+		for (uint16_t y = 0; y < kernel.framebuffer->height; y++) {
 			Framebuffer__set_pixel(x, y, color);
 		}
 	}
@@ -29,7 +28,7 @@ void Framebuffer__print_glyph(Glyph *glyph) {
 		for (uint16_t x = 0; x < glyph->width; x++) {
 			// Print bitmap pixels
 			uint64_t color;
-			if ((*glyph->bitmap & (0b10000000 >> x)) > 0) {
+			if ((*glyph->bitmap & ((1 << 7) >> x)) > 0) {
 				// Glyph color
 				color = glyph->fg_color;
 			} else {

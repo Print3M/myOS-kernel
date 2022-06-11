@@ -1,4 +1,5 @@
 #include <console/console.h>
+#include <kernel.h>
 #include <libc/stdarg.h>
 #include <libc/stdbool.h>
 #include <libc/stdint.h>
@@ -6,7 +7,7 @@
 void printf(char *fmt, ...) {
 	va_list args;
 	va_start(args, fmt);
-	Console__printf(&console, fmt, args);
+	Console__printf(kernel.console, fmt, args);
 	va_end(args);
 }
 

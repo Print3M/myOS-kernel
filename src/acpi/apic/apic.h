@@ -32,12 +32,14 @@
 #include <libc/stdint.h>
 
 #define APIC_BASE_MSR  0x1b
-#define APIC_BASE_ADDR 0xfee0000
+#define APIC_BASE_ADDR 0xfee00000
 
+// See: Table 10-1 Local APIC Register Address Map
 #define APIC_ID_REG		 (APIC_BASE_ADDR + 0x20)
 #define APIC_VERSION_REG (APIC_BASE_ADDR + 0x30)
+#define APIC_IRR_REG	 (APIC_BASE_ADDR + 0x200)
 
-// Chapter: 10.4.4 Local APIC Status and Location
+// Read: 10.4.4 Local APIC Status and Location
 typedef struct __attribute__((packed)) {
 	uint8_t reserved1;
 	uint8_t bsp : 1;
@@ -46,7 +48,9 @@ typedef struct __attribute__((packed)) {
 	uint32_t base_addr : 24;
 } APIC_msr;
 
-void APIC__enable(void);
-uint8_t APIC__get_local_id(void);
-uint8_t APIC__get_init_id(void);
-uint8_t APIC__get_version(void);
+void APIC_enable(void);
+uint8_t APIC_get_local_id(void);
+uint8_t APIC_get_init_id(void);
+uint8_t APIC_get_version(void);
+uint64_t APIC_read_msr(void);
+void APIC_write_msr(uint64_t value);

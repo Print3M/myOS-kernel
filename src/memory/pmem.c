@@ -1,19 +1,18 @@
-#include <memory/pmem.h>
-#include <memory/mmap.h>
+#include <kernel.h>
 #include <libc/stdbool.h>
 #include <libc/stdlib.h>
+#include <memory/mmap.h>
+#include <memory/pmem.h>
 
 PhysicalMemory physical_memory = {.initialized = false};
 
-void __get_largest_free_mem_seg(MemoryData *memory, size_t *size, void **mem_seg) {
-	// IN  memory
+void __get_largest_free_mem_seg(size_t *size, void **mem_seg) {
 	// OUT size    - size of largest free memory segment
 	// OUT mem_seg - address to largest free mem seg
 	*size = 0;
 
-	for (uint64_t i = 0; i < memory->entries; i++) {
-		EfiMemoryDescriptor *desc =
-			get_memory_descriptor(memory->memory_map, i, memory->descriptor_sz);
+	for (uint64_t i = 0; i < kernel.memory->entries; i++) {
+		EfiMemoryDescriptor *desc = get_memory_descriptor(i);
 
 		if (desc->type == EFI_CONVENTIONAL_MEMORY) {
 			size_t seg_sz = desc->number_of_pages * PAGE_SZ;
@@ -26,13 +25,14 @@ void __get_largest_free_mem_seg(MemoryData *memory, size_t *size, void **mem_seg
 	}
 }
 
-pmem_status init_physical_memory(MemoryData *memory, void *stack_addr) {
+PhysicalMemory *init_physical_memory(void) {
+	// Return address of physical memory structure
 	void *largest_free_mem_seg = NULL;
 	size_t largest_free_mem_seg_sz = 0;
-	__get_largest_free_mem_seg(memory, &largest_free_mem_seg_sz, &largest_free_mem_seg);
-	PhysicalMemory__init(memory, largest_free_mem_seg, stack_addr);
+	__get_largest_free_mem_seg(&largest_free_mem_seg_sz, &largest_free_mem_seg);
+	PhysicalMemory__init(largest_free_mem_seg);
 
-	return PMEM_INIT_SUCCESS;
+	return &physical_memory;
 }
 
 void PhysicalMemory__set_frame_state(size_t index, frame_state state) {
@@ -68,7 +68,12 @@ size_t PhysicalMemory__get_frames_array_sz() {
 	return physical_memory.frames * 8 * sizeof(PageFrame); // In bytes
 }
 
-void PhysicalMemory__init(MemoryData *memory, void *page_frames_array_buffer, void *stack_addr) {
+void PhysicalMemory__init(void *page_frames_array_buffer) {
+	/*
+		Array of frames is based on memory map recived from UEFI.
+		There might be holes like MMIO.
+	*/
+
 	if (physical_memory.initialized) {
 		// Do not reinitalize
 		return;
@@ -76,24 +81,23 @@ void PhysicalMemory__init(MemoryData *memory, void *page_frames_array_buffer, vo
 
 	// Initialize - all frames set to free
 	physical_memory.array = (PageFrame *) page_frames_array_buffer;
-	physical_memory.frames = get_number_of_page_frames(memory);
+	physical_memory.frames = get_number_of_page_frames();
 	physical_memory.free_frames = physical_memory.frames;
-	physical_memory.used_frames = 0;
+	physical_memory.locked_frames = 0;
 	physical_memory.reserved_frames = 0;
 
 	// Set all frames in array to free
 	for (uint64_t i = 0; i < physical_memory.frames; i++) {
-		// TODO: What about memory mapped regions?
-		//		 They are not locked further.
+		// Zero space for PageFrame structu
+		memset(&physical_memory.array[i], 0x0, sizeof(PageFrame));
 		PhysicalMemory__set_frame_state(i, FREE_FRAME);
 	}
 
-	// Initialize frames by memory map recived from bootloader
+	// Initialize frames by memory map
 	uint64_t frame_id = 0;
 	uint64_t array_frame_id = 0;
-	for (uint64_t i = 0; i < memory->entries; i++) {
-		EfiMemoryDescriptor *desc =
-			get_memory_descriptor(memory->memory_map, i, memory->descriptor_sz);
+	for (uint64_t i = 0; i < kernel.memory->entries; i++) {
+		EfiMemoryDescriptor *desc = get_memory_descriptor(i);
 
 		// Get base address of memory map region
 		uint64_t bs_addr = (uint64_t) desc->physical_addr;
@@ -119,7 +123,7 @@ void PhysicalMemory__init(MemoryData *memory, void *page_frames_array_buffer, vo
 	}
 
 	// Lock frame with stack itself
-	size_t stack_frame = PhysicalMemory__get_frame_index_by_ptr(stack_addr);
+	size_t stack_frame = PhysicalMemory__get_frame_index_by_ptr(kernel.stack);
 	PhysicalMemory__reserve_frame(stack_frame);
 
 	// Lock frames where the frames' array is placed
@@ -135,7 +139,7 @@ void PhysicalMemory__lock_frame(size_t index) {
 
 	if (state == FREE_FRAME) {
 		physical_memory.free_frames -= 1;
-		physical_memory.used_frames += 1;
+		physical_memory.locked_frames += 1;
 		PhysicalMemory__set_frame_state(index, LOCKED_FRAME);
 	}
 }
@@ -145,7 +149,7 @@ void PhysicalMemory__free_frame(size_t index) {
 
 	if (state == LOCKED_FRAME) {
 		physical_memory.free_frames += 1;
-		physical_memory.used_frames -= 1;
+		physical_memory.locked_frames -= 1;
 		PhysicalMemory__set_frame_state(index, FREE_FRAME);
 	}
 }

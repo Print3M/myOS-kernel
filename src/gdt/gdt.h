@@ -49,7 +49,5 @@ typedef struct __attribute__((packed, aligned(0x1000))) {
 // __attribute__((packed)) -> use the smallest possible space for structu (avoid padding)
 // __attribute__((aligned(0x1000))) ->  its start address can be divided by 0x1000
 
-void init_gdt(void);
-
-extern GDT global_descriptor_table;
+GDT *init_gdt(void);
 extern void load_gdt(GDTR *gdtr_ptr);

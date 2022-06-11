@@ -17,19 +17,13 @@ typedef struct {
 	uint16_t model_id;
 	uint16_t family_id;
 	char brand[49]; // + \0
-} CPU_ModelInfo;
-
-typedef struct {
 	bool hyperthreading;
 	uint8_t physical_cores;
 	uint8_t logical_cores;
-} CPU_Info;
-
-extern CPU_ModelInfo cpu_model_info;
-extern CPU_Info cpu_info;
+} CPU;
 
 cpu_status check_cpu_state(void);
-void get_cpu_info(void);
+CPU *CPU_init(void);
 
 // Assembly functions
 extern void

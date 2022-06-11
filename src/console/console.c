@@ -1,12 +1,19 @@
 #include <console/console.h>
 #include <framebuffer/colors.h>
 #include <framebuffer/framebuffer.h>
+#include <kernel.h>
 #include <libc/stdarg.h>
 #include <libc/stdbool.h>
 #include <libc/stdint.h>
 #include <libc/stdlib.h>
 
 Console console = {.initialized = false};
+ConsoleCursor cursor = {.line = 0,
+						.column = 0,
+						.max_lines = CURSOR_MAX_LINES,
+						.max_columns = CURSOR_MAX_COLUMNS,
+						.fg_color = WHITE,
+						.bg_color = BLACK};
 
 void ConsoleCursor__new_line(ConsoleCursor *self) {
 	self->column = 0;
@@ -46,15 +53,17 @@ void ConsoleCursor__set_fg_color(ConsoleCursor *self, uint32_t color) { self->fg
 
 void ConsoleCursor__set_bg_color(ConsoleCursor *self, uint32_t color) { self->bg_color = color; }
 
-void Console__init(ConsoleFont *font, ConsoleCursor *cursor, Framebuffer *framebuffer) {
+Console *Console__init(ConsoleFont *font) {
 	if (console.initialized) {
-		return;
+		return &console;
 	}
 
-	console.cursor = cursor;
+	console.cursor = &cursor;
 	console.font = font;
-	console.framebuffer = framebuffer;
+	console.framebuffer = kernel.framebuffer;
 	console.initialized = true;
+
+	return &console;
 }
 
 void Console__print_char(Console *self, uint16_t chr) {

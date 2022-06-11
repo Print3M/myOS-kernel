@@ -1,8 +1,6 @@
 #pragma once
 #include <libc/stdint.h>
 
-#define PAGE_SZ 4096 // In bytes
-
 typedef struct {
 	uint32_t type;
 	uint32_t pad;
@@ -37,7 +35,5 @@ typedef enum {
 	EFI_MAX_MEMORY_TYPE
 } efi_memory_type;
 
-EfiMemoryDescriptor *
-get_memory_descriptor(EfiMemoryDescriptor *memory_map, uint64_t n, size_t descriptor_sz);
-
-uint64_t get_number_of_page_frames(MemoryData *memory);
+EfiMemoryDescriptor *get_memory_descriptor(uint64_t n);
+uint64_t get_number_of_page_frames(void);

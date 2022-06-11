@@ -7,7 +7,7 @@
 
 	Shortly:
 	RSDP.rsdt_addr -> RSDT.sdt_table[] = (example) [APIC, HPET, FACP, MADT]
-	
+
 	Longer:
 	Kernel gets the address of ACPI RSDP structure from the bootloader.
 	The ACPI RSDP structure has address RSDT structure.
@@ -26,11 +26,11 @@ typedef uint8_t acpi_version;
 #define RSDP_SIGNATURE "RSD PTR "
 #define RSDT_SIGNATURE "RSDT"
 
-// For all available signatures: ACPI Spec., Table 5.5 and 5.6
+// For all available signatures, see: Table 5.5 and 5.6
 #define HPET_STD_SIGNATURE "HPET"
 #define APIC_STD_SIGNATURE "APIC"
 
-// ACPI Spec., Table 5.3
+// See: Table 5.3
 typedef struct __attribute__((packed)) {
 	// RSDP for ACPI 1.0
 	char signature[8];
@@ -40,7 +40,7 @@ typedef struct __attribute__((packed)) {
 	uint32_t rsdt_addr;
 } ACPI_RSDP;
 
-// ACPI Spec., Table 5.4
+// See: Table 5.4
 typedef struct __attribute__((packed)) {
 	char signature[4];
 	uint32_t length;
@@ -52,6 +52,15 @@ typedef struct __attribute__((packed)) {
 	uint32_t creator_id;
 	uint32_t creator_revision;
 } ACPI_SDT_Header;
+
+// Read: 5.2.3.2. Generic Address Structure
+typedef struct __attribute__((packed)) {
+	uint8_t address_space_id;
+	uint8_t reg_bit_width;
+	uint8_t reg_bit_offset;
+	uint8_t access_size;
+	uint64_t address;
+} ACPI_GAS;
 
 // ACPI Spec., Table 5.7
 typedef struct __attribute__((packed)) {

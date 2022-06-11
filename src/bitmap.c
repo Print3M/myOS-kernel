@@ -1,8 +1,9 @@
 #include <bitmap.h>
 #include <libc/stdbool.h>
 #include <libc/stdint.h>
+#include <libc/stdlib.h>
 
-void __get_bitmap_offset(uint64_t index, uint64_t *byte_offset, uint8_t *bit_offset) {
+void _get_bitmap_offset(uint64_t index, uint64_t *byte_offset, uint8_t *bit_offset) {
 	// Params:
 	//  IN  index
 	//  OUT byte_offset
@@ -11,34 +12,24 @@ void __get_bitmap_offset(uint64_t index, uint64_t *byte_offset, uint8_t *bit_off
 	*bit_offset = index % 8;
 }
 
-void Bitmap__zero(Bitmap *self) {
-	for (size_t i = 0; i < self->size; i++) {
-		self->buffer[i] = 0b00000000;
-	}
-}
-
-bool Bitmap__get(Bitmap *self, uint64_t index) {
-	bool result;
-	uint64_t byte_offset;
-	uint8_t bit_offset;
-	__get_bitmap_offset(index, &byte_offset, &bit_offset);
+bool Bitmap_get(Bitmap *self, uint64_t index) {
+	bool result = 0;
+	uint64_t byte_offset = 0;
+	uint8_t bit_offset = 0;
+	_get_bitmap_offset(index, &byte_offset, &bit_offset);
 
 	// Get result byte
 	result = self->buffer[byte_offset];
 
 	// Get result bit
-	if ((result << bit_offset) & 0b10000000) {
-		return true;
-	} else {
-		return false;
-	};
+	return (result << bit_offset) & (1 << 7) ? true : false;
 }
 
-void Bitmap__set(Bitmap *self, uint64_t index, bool value) {
-	uint64_t byte_offset;
-	uint8_t bit_offset;
-	__get_bitmap_offset(index, &byte_offset, &bit_offset);
-	uint8_t bit_pattern = 0b10000000 >> bit_offset;
+void Bitmap_set(Bitmap *self, uint64_t index, bool value) {
+	uint64_t byte_offset = 0;
+	uint8_t bit_offset = 0;
+	_get_bitmap_offset(index, &byte_offset, &bit_offset);
+	uint8_t bit_pattern = (1 << 7) >> bit_offset;
 
 	// Set bit
 	self->buffer[byte_offset] &= ~bit_pattern;
@@ -47,11 +38,21 @@ void Bitmap__set(Bitmap *self, uint64_t index, bool value) {
 	}
 }
 
-Bitmap Bitmap__init(size_t size, void *buffer) {
-	// Initialize bitmap struct and zero entire bitmap
+Bitmap *Bitmap_init(size_t no_fields, void *buffer, size_t buff_size) {
+	// :fields 		- number of bits (fields) in bitmap
+	// :buffer 		- allocated buffer for bitmap
+	// :buff_size:  - buffer size in bytes
 
-	Bitmap bitmap = {.size = size, .buffer = (uint8_t *) buffer};
-	Bitmap__zero(&bitmap);
+	// Bitmap too big for buffer (minus .size field)
+	if (no_fields > (buff_size - sizeof(size_t)) * 8) {
+		return NULL;
+	}
+
+	memset(buffer, 0x0, buff_size);
+
+	Bitmap *bitmap = (Bitmap *) buffer;
+	bitmap->size = no_fields;
+	bitmap->buffer = (uint8_t *) buffer;
 
 	return bitmap;
 }

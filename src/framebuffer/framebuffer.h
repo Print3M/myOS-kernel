@@ -20,12 +20,6 @@ typedef struct {
 	uint32_t bg_color;
 } Glyph;
 
-// Global framebuffer object
-extern Framebuffer *framebuffer;
-
-// There is no Framebuffer__init function because
-// framebuffer is global struct which is provided
-// by bootloader
 void Framebuffer__set_pixel(uint16_t x, uint16_t y, uint64_t color);
 void Framebuffer__set_all_pixels(uint64_t color);
 void Framebuffer__print_glyph(Glyph *glyph);

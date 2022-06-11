@@ -13,7 +13,9 @@
 #define INTERRUPT_GATE 14
 #define TRAP_GATE	   15
 
-// Vector (entries) indexes in IDT
+// Vector (entries) indexes in IDT.
+// For all possibilities, see: Table 6-1. Protected-Mode Exceptions
+// and Interrupts
 #define DIVIDE_BY_ZERO_INDEX 0
 #define PAGE_FAULT_INDEX	 14
 
@@ -35,7 +37,7 @@ typedef struct __attribute__((packed)) {
 typedef struct __attribute__((packed)) {
 	// Figure 6-1 - Relationship of the IDTR and IDT
 	uint16_t limit;
-	uint64_t base_addr;
+	void *base_addr;
 } IDTR;
 
-void init_idt(void);
+IDT_DescriptionEntry *init_idt(void);
